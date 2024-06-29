@@ -1,0 +1,25 @@
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+typedef struct {
+  size_t words_count;
+} Document;
+
+class TermData {
+private:
+  std::string term;
+  // doc_id to word count
+  std::unordered_map<std::string, size_t> docs_term_count;
+
+public:
+  TermData(std::string term, std::string initial_doc_key);
+  std::string get_data();
+  size_t get_term_count(std::string doc_id);
+  void add_doc(std::string doc_id, size_t term_count);
+  std::vector<std::string> get_all_doc_keys();
+  void inc_term_count(std::string doc_id);
+  bool remove_doc(std::string doc_id);
+  bool is_doc_exits(std::string doc_key);
+  bool empty();
+};
