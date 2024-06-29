@@ -285,6 +285,7 @@ nodes with `() []` are leaf nodes that hold the data:
 
 nodes with `.` are non leaf nodes.
 nodes with `() []` are leaf nodes that hold the data:
-    1. the term
-    2. the documents it exists in
-    3. the count in such documents
+
+1. the term
+2. the documents it exists in
+3. the count in such documents
