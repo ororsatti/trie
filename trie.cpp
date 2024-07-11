@@ -73,6 +73,7 @@ Comperession Node::compare(std::string key, int begin) {
 }
 
 Trie::Trie() { this->root = std::make_shared<Node>(); }
+
 std::shared_ptr<Node> Trie::search(std::shared_ptr<Node> node, std::string key,
                                    int &begin) {
   Comperession comp = node->compare(key, begin);
@@ -93,6 +94,14 @@ std::shared_ptr<Node> Trie::search(std::shared_ptr<Node> node, std::string key,
   }
 
   return node;
+}
+
+std::shared_ptr<Node> Trie::find_exact_match(std::string key) {
+  int begin = 0;
+  auto maybe_node = search(this->root, key, begin);
+  Comperession comp = maybe_node->compare(key, begin);
+  auto node = comp.key_split_index == key.length() ? maybe_node : nullptr;
+  return (node != nullptr && node->is_leaf()) ? node : nullptr;
 }
 
 void Trie::insert(std::string word, std::string doc_key) {
@@ -219,6 +228,12 @@ void Trie::remove_document(std::string content, std::string doc_key) {
   }
 }
 
+int Trie::get_document_frequency_for_term(std::string term) {
+  int begin = 0;
+  auto node = search(root, term, begin);
+  return 0;
+}
+
 std::string print_leaf(std::shared_ptr<TermData> leaf) {
   std::string leaf_string = "";
 
@@ -249,7 +264,7 @@ void Trie::print(const std::shared_ptr<Node> node, const std::string prefix,
 
   if (node != root) {
     std::cout << std::string(level * 2, ' ') << prefix << " "
-              << (node->is_leaf() ? print_leaf(node->get_leaf()) : ".")
+              << (node->is_leaf() ? print_leaf(node->get_leaf()) : ">")
               << std::endl;
   }
 

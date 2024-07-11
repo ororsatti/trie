@@ -3,6 +3,8 @@
 #include <memory>
 #include <unordered_map>
 
+#pragma once
+
 typedef struct {
   int node_split_index;
   int key_split_index;
@@ -44,12 +46,14 @@ public:
   Trie();
   std::shared_ptr<Node> search(std::shared_ptr<Node> node, std::string key,
                                int &begin);
+  std::shared_ptr<Node> find_exact_match(std::string key);
   void insert(std::string word, std::string doc_key);
   bool erase(std::shared_ptr<Node> curr, std::string key, int begin,
              std::string doc_key);
   void truncate(std::shared_ptr<Node> curr);
   void remove(std::string key, std::string doc_key);
   void remove_document(std::string content, std::string doc_key);
+  int get_document_frequency_for_term(std::string term);
   void print(const std::shared_ptr<Node> node, const std::string prefix,
              int level) const;
   void print_tree() const;

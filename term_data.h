@@ -2,10 +2,9 @@
 #include <unordered_map>
 #include <vector>
 
-typedef struct {
-  size_t words_count;
-} Document;
+#pragma once
 
+using namespace std;
 class TermData {
 private:
   std::string term;

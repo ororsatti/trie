@@ -1,5 +1,51 @@
+#include "corpus.h"
 #include "tokenizer.h"
 #include "trie.h"
+#include <fstream>
+#include <vector>
+
+// Function to read a file into a string
+std::string read_file(const std::string &filename) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    std::cerr << "Error opening file: " << filename << std::endl;
+    return "";
+  }
+
+  std::string content((std::istreambuf_iterator<char>(file)),
+                      std::istreambuf_iterator<char>());
+  return content;
+}
+
+std::vector<std::pair<std::string, std::string>>
+parseJsonContent(const std::string &jsonContent) {
+  std::vector<std::pair<std::string, std::string>> contentList;
+
+  size_t pos = 0;
+  while ((pos = jsonContent.find("\"title\":", pos)) != std::string::npos) {
+    pos = jsonContent.find("\"", pos + 8); // Move to the start of title
+    size_t start = pos + 1;
+    size_t end = jsonContent.find("\"", start);
+    if (end != std::string::npos) {
+      std::string title = jsonContent.substr(start, end - start);
+      pos = jsonContent.find("\"content\":", end);
+      pos = jsonContent.find("\"", pos + 10); // Move to the start of content
+      start = pos + 1;
+      end = jsonContent.find("\"", start);
+      if (end != std::string::npos) {
+        std::string content = jsonContent.substr(start, end - start);
+        contentList.push_back(std::make_pair(title, content));
+        pos = end;
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  return contentList;
+}
 
 int main(void) {
   Trie t;
@@ -54,36 +100,38 @@ int main(void) {
       "sheltered place to build a nest, away from the wind and rain. He wants "
       "it close to food, and attractive to potential mates. He also wants to "
       "convince competitors for that space to keep their distance.";
-
-  auto words = tokenize(book);
-  for (auto word : words) {
-    t.insert(word, "11");
+  std::string book3 =
+      "Jean Echenoz, considered by many to be the most distinguished and "
+      "versatile living French novelist, turns his attention to the deathtrap "
+      "of World War I in 1914. In it, five Frenchmen go off to war, two of "
+      "them leaving behind a young woman who longs for their return. But the "
+      "main character in this brilliant novel is the Great War itself. "
+      "Echenoz, whose work has been compared to that of writers as diverse as "
+      "Joseph Conrad and Laurence Sterne, leads us gently from a balmy summer "
+      "day deep into the relentless and, one hundred years later, still "
+      "unthinkable carnage of trench warfare. With the delicacy of a "
+      "miniaturist and with an irony that is both witty and clear-eyed, "
+      "Echenoz offers us an intimate epic: in the panorama of a clear blue "
+      "sky, a bi-plane spirals suddenly into the ground; a piece of shrapnel "
+      "shears the top off a man’s head as if it were a soft-boiled egg; we "
+      "dawdle dreamily in a spring-scented clearing with a lonely "
+      "shell-shocked soldier strolling innocently toward a firing squad ready "
+      "to shoot him for desertion. Ultimately, the grace notes of humanity in "
+      "1914 rise above the terrors of war in this beautifully crafted tale "
+      "that Echenoz tells with discretion, precision, and love.";
+  Corpus c;
+  // c.add_doc("book", book);
+  // c.add_doc("book2", book2);
+  // c.add_doc("book3", book3);
+  // c.print();
+  auto content_list = parseJsonContent(read_file("processed.json"));
+  for (const auto &pair : content_list) {
+    c.add_doc(pair.first, pair.second);
   }
-
-  auto words2 = tokenize(book2);
-  for (auto word : words2) {
-    t.insert(word, "22");
+  vector<QueryResult> qr = c.search("rostv name count dewy princess mary");
+  std::cout << qr.size() << std::endl;
+  for (QueryResult &res : qr) {
+    std::cout << res.doc_key << " " << res.score << std::endl;
   }
-  // std::string content1 = "...";
-  // std::string content2 = "this is content";
-  // auto words = tokenize(content1);
-  // for (auto word : words) {
-  //   t.insert(word, "11");
-  // }
-  // auto words2 = tokenize(content2);
-  // for (auto word : words2) {
-  //   t.insert(word, "2");
-  // }
-  // t.insert("same", "22");
-  // t.insert("same", "22");
-  // t.insert("sand", "22");
-  // t.insert("same", "22");
-  t.remove_document(book, "11");
-  // t.remove("same", "22");
-  // t.remove("same", "22");
-  // t.remove("sand", "22");
-  // t.remove_document(book2, "22");
-  t.print_tree();
-  // t.print_tree();
   return 0;
 }
