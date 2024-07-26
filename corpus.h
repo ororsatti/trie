@@ -1,10 +1,11 @@
+#ifndef SEARCH_CORPUS
+#define SEARCH_CORPUS
 #include "trie.h"
 #include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#pragma once
 
 typedef struct {
   std::string key;
@@ -37,3 +38,4 @@ public:
   double get_avg_doc_len();
   void print();
 };
+#endif

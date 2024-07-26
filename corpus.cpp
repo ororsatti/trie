@@ -20,7 +20,7 @@ bool Corpus::add_doc(std::string doc_key, std::string doc_content) {
   }
   vector<std::string> tokens = tokenize(doc_content);
   for (const auto &token : tokens) {
-    this->index.insert(token, doc_key);
+    this->index.insert2(token, doc_key);
   }
   auto doc = make_shared<Document>();
   doc->words_count = tokens.size();

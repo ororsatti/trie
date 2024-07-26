@@ -56,5 +56,8 @@ public:
   int get_document_frequency_for_term(std::string term);
   void print(const std::shared_ptr<Node> node, const std::string prefix,
              int level) const;
+  shared_ptr<Node> create_path(shared_ptr<Node> node, std::string key,
+                               std::string doc_key);
+  void insert2(std::string word, std::string doc_key);
   void print_tree() const;
 };

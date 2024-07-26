@@ -120,18 +120,38 @@ int main(void) {
       "1914 rise above the terrors of war in this beautifully crafted tale "
       "that Echenoz tells with discretion, precision, and love.";
   Corpus c;
+
+  // t.insert2("t", "a");
+  // t.insert2("te", "b");
+  // t.insert2("tebula", "b");
+  // t.insert2("tebula", "b");
+  // t.insert2("tes", "a");
+  // t.insert2("tes", "c");
+  // t.insert2("testingggg", "a");
+  // t.insert2("testingggg", "b");
   // c.add_doc("book", book);
   // c.add_doc("book2", book2);
   // c.add_doc("book3", book3);
   // c.print();
+  //
+  // t.print_tree();
   auto content_list = parseJsonContent(read_file("processed.json"));
+  auto start = std::chrono::high_resolution_clock::now();
   for (const auto &pair : content_list) {
     c.add_doc(pair.first, pair.second);
   }
-  vector<QueryResult> qr = c.search("rostv name count dewy princess mary");
-  std::cout << qr.size() << std::endl;
-  for (QueryResult &res : qr) {
-    std::cout << res.doc_key << " " << res.score << std::endl;
-  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end - start;
+
+  // Output the duration in seconds
+  std::cout << "Time taken by function: " << duration.count() << " seconds"
+            << std::endl;
+  // vector<QueryResult> qr = c.search("rostv name count dewy princess mary");
+  // std::cout << qr.size() << std::endl;
+  // for (QueryResult &res : qr) {
+  // std::cout << res.doc_key << " " << res.score << std::endl;
+  // }
+  // c.print();
   return 0;
 }

@@ -1,5 +1,6 @@
 #include "trie.h"
 #include "tokenizer.h"
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -280,3 +281,53 @@ void Trie::print(const std::shared_ptr<Node> node, const std::string prefix,
 };
 
 void Trie::print_tree() const { print(this->root, "", -2); }
+
+std::string get_string_comp(Comperession comp) {
+  return "key_split_index: " + to_string(comp.key_split_index) + "\n" +
+         "node_split_index: " + to_string(comp.node_split_index) + "\n";
+}
+shared_ptr<Node> Trie::create_path(shared_ptr<Node> node, std::string key,
+                                   std::string doc_key) {
+  size_t len = key.size();
+  shared_ptr<Node> selected_node = node;
+  shared_ptr<Node> found_node = nullptr;
+  for (size_t pos = 0; selected_node != nullptr && pos < len;) {
+    auto pair = selected_node->children.find(key[pos]);
+
+    if (pair == selected_node->children.end()) {
+      auto new_child = make_shared<Node>(key.substr(pos, key.length()));
+      selected_node->children.insert({key[pos], new_child});
+      return new_child;
+    } else {
+      shared_ptr<Node> node = pair->second;
+      Comperession cmp = node->compare(key, pos);
+
+      // if the current node key is shorter
+      if (cmp.node_split_index == node->get_key().length()) {
+        selected_node = node;
+      } else {
+        std::string nkey = node->get_key();
+        auto intermediate =
+            make_shared<Node>(nkey.substr(0, cmp.node_split_index));
+        node->set_key(nkey.substr(cmp.node_split_index, nkey.length()));
+        intermediate->children.insert({node->get_key()[0], node});
+        selected_node->children.erase(nkey[0]);
+        selected_node->children.insert({nkey[0], intermediate});
+        selected_node = intermediate;
+      }
+
+      pos = cmp.key_split_index;
+    }
+  }
+  return selected_node;
+}
+
+void Trie::insert2(std::string key, std::string doc_key) {
+  auto n = this->create_path(this->root, key, doc_key);
+  if (n->is_leaf()) {
+    // std::cout << "dockey: " << doc_key << std::endl;
+    n->add_doc_or_increment(doc_key);
+  } else {
+    n->create_leaf(key, doc_key);
+  }
+}

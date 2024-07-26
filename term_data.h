@@ -1,3 +1,5 @@
+#ifndef SEARCH_TERM_DATA
+#define SEARCH_TERM_DATA
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -22,3 +24,5 @@ public:
   bool is_doc_exits(std::string doc_key);
   bool empty();
 };
+
+#endif
