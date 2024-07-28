@@ -134,16 +134,19 @@ int main(void) {
   // c.add_doc("book3", book3);
   // c.print();
   //
-  // t.print_tree();
-  auto content_list = parseJsonContent(read_file("processed.json"));
+  auto content_list = parseJsonContent(read_file("test.json"));
   auto start = std::chrono::high_resolution_clock::now();
   for (const auto &pair : content_list) {
-    c.add_doc(pair.first, pair.second);
+    vector<std::string> words = tokenize(pair.second);
+    for (const std::string &word : words) {
+      t.insert2(word, pair.first);
+    }
   }
-
+  //
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end - start;
 
+  t.print_tree();
   // Output the duration in seconds
   std::cout << "Time taken by function: " << duration.count() << " seconds"
             << std::endl;

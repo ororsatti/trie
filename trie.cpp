@@ -11,18 +11,18 @@
 Node::Node(std::string key) { this->key = key; }
 
 Node::Node() {}
-bool Node::is_leaf() { return this->leaf.get() != nullptr; }
+Node::~Node() {
+  for (auto pair : this->children) {
+    delete pair.second;
+  }
 
-void Node::merge_nodes(std::shared_ptr<Node> node_to_merge) {
-  this->set_key(this->get_key() + node_to_merge->get_key());
-  this->leaf = std::move(node_to_merge->leaf);
+  this->children.clear();
+  // delete this;
 }
 
-std::shared_ptr<TermData> Node::get_leaf() { return this->leaf; }
+bool Node::is_leaf() const { return this->leaf.get() != nullptr; }
 
-void Node::move_leaf_to(std::shared_ptr<Node> new_owner) {
-  new_owner->leaf = std::move(this->leaf);
-}
+std::shared_ptr<TermData> Node::get_leaf() const { return this->leaf; }
 
 void Node::add_doc_or_increment(std::string doc_key) {
   if (this->leaf->is_doc_exits(doc_key)) {
@@ -32,23 +32,10 @@ void Node::add_doc_or_increment(std::string doc_key) {
   }
 }
 
-std::shared_ptr<Node> Node::migrate_children(std::string key) {
-  std::shared_ptr<Node> new_node = std::make_shared<Node>(key);
-  new_node->children = this->children;
-  return new_node;
-}
-
-std::shared_ptr<Node> Node::create_leaf_node(std::string key, std::string data,
-                                             std::string initial_doc_key) {
-  std::shared_ptr<Node> new_node = std::make_shared<Node>(key);
-  new_node->create_leaf(data, initial_doc_key);
-  return new_node;
-}
-
-std::string Node::get_key() { return this->key; }
+std::string Node::get_key() const { return this->key; }
 
 void Node::set_key(std::string new_key) { this->key = new_key; }
-void Node::delete_leaf() { this->leaf.reset(); }
+// void Node::delete_leaf() { this->leaf.reset(); }
 
 void Node::create_leaf(std::string data, std::string initial_doc_key) {
   if (this->leaf.get()) {
@@ -73,167 +60,114 @@ Comperession Node::compare(std::string key, int begin) {
   return c;
 }
 
-Trie::Trie() { this->root = std::make_shared<Node>(); }
+Trie::Trie() { this->root = new Node(); }
 
-std::shared_ptr<Node> Trie::search(std::shared_ptr<Node> node, std::string key,
-                                   int &begin) {
-  Comperession comp = node->compare(key, begin);
+// std::shared_ptr<Node> Trie::search(std::shared_ptr<Node> node, std::string
+// key,
+//                                    int &begin) {
+//   Comperession comp = node->compare(key, begin);
+//
+//   // word is a prefix of node.value, or they are equal
+//   if (comp.node_split_index >= key.length()) {
+//     return node;
+//   }
+//
+//   // node.value is a prefix of word
+//   if (comp.node_split_index >= node->get_key().length()) {
+//     auto next = node->children.find(key[comp.key_split_index]);
+//     if (next == node->children.end()) {
+//       return node;
+//     }
+//     begin = comp.key_split_index;
+//     return Trie::search(next->second, key, begin);
+//   }
+//
+//   return node;
+// }
 
-  // word is a prefix of node.value, or they are equal
-  if (comp.node_split_index >= key.length()) {
-    return node;
-  }
+// void Trie::truncate(std::shared_ptr<Node> curr) {
+//   auto child = curr->children.begin()->second;
+//   curr->children.clear();
+//   curr->set_key(curr->get_key() + child->get_key());
+//   curr->children = child->children;
+//   if (child->is_leaf()) {
+//     child->move_leaf_to(curr);
+//   }
+// }
+//
+// bool Trie::erase(std::shared_ptr<Node> curr, std::string key, int begin,
+//                  std::string doc_key) {
+//   // check if we have a match
+//   if (curr != nullptr && key.substr(begin, key.length()) == curr->get_key())
+//   {
+//     return curr->is_leaf();
+//   }
+//
+//   // finding the next prefix in the trie
+//   int new_begin = begin + curr->get_key().length();
+//   // if its larger than the length of the key there is no point to move
+//   // forward
+//   if (new_begin > key.length())
+//     return false;
+//
+//   // finding the next child
+//   auto next_pair = curr->children.find(key[new_begin]);
+//   if (next_pair == curr->children.end())
+//     return false;
+//
+//   auto next = next_pair->second;
+//   // if the next child is matching the word we want to remove
+//   if (erase(next, key, new_begin, doc_key)) {
+//     auto children = next->children;
+//     // when there are children we do not want to erase the node completely
+//     but
+//     // handle it with care
+//     // 1. we remove the doc from the leaf.
+//     // 2. we check if the doc is empty after the removal, and if so, we
+//     remove
+//     // the leaf itslef.
+//     // 3. if the node is no longer a leaf node, and have only one child, we
+//     // truncate it with its next child
+//     if (!children.empty()) {
+//       next->get_leaf()->remove_doc(doc_key);
+//       if (next->get_leaf()->empty()) {
+//         next->delete_leaf();
+//       }
+//       if (next->children.size() == 1) {
+//         truncate(next);
+//       }
+//     } else {
+//       // in the case that the next node has no children we can remove it
+//       // safely if its not a leaf
+//       next->get_leaf()->remove_doc(doc_key);
+//       if (next->get_leaf()->empty()) {
+//         curr->children.erase(key[new_begin]);
+//       }
+//       // making sure that we are not truncating to the root
+//       if (curr->children.size() == 1 && !curr->get_key().empty()) {
+//         truncate(curr);
+//       }
+//     }
+//   }
+//   return false;
+// }
 
-  // node.value is a prefix of word
-  if (comp.node_split_index >= node->get_key().length()) {
-    auto next = node->children.find(key[comp.key_split_index]);
-    if (next == node->children.end()) {
-      return node;
-    }
-    begin = comp.key_split_index;
-    return Trie::search(next->second, key, begin);
-  }
+// void Trie::remove(std::string key, std::string doc_key) {
+//   erase(this->root, key, 0, doc_key);
+// }
 
-  return node;
-}
+// void Trie::remove_document(std::string content, std::string doc_key) {
+//   auto words = tokenize(content);
+//   for (auto word : words) {
+//     this->remove(word, doc_key);
+//   }
+// }
 
-std::shared_ptr<Node> Trie::find_exact_match(std::string key) {
-  int begin = 0;
-  auto maybe_node = search(this->root, key, begin);
-  Comperession comp = maybe_node->compare(key, begin);
-  auto node = comp.key_split_index == key.length() ? maybe_node : nullptr;
-  return (node != nullptr && node->is_leaf()) ? node : nullptr;
-}
-
-void Trie::insert(std::string word, std::string doc_key) {
-  int begin = 0;
-  auto last_node = search(root, word, begin);
-  Comperession comp = last_node->compare(word, begin);
-  // the word is a prefix of the last node
-  if (comp.key_split_index == word.length()) {
-    // the last word and the word are equal
-    if (comp.node_split_index == last_node->get_key().length()) {
-      if (last_node->is_leaf()) {
-        last_node->add_doc_or_increment(doc_key);
-      } else {
-        last_node->create_leaf(word, doc_key);
-      }
-    } else {
-      std::string node_key = last_node->get_key();
-      // taking the last node and splitting it into two
-      std::string child_val =
-          node_key.substr(comp.node_split_index, node_key.length());
-      std::shared_ptr<Node> child = last_node->migrate_children(child_val);
-      last_node->move_leaf_to(child);
-      last_node->create_leaf(word, doc_key);
-      last_node->set_key(node_key.substr(0, comp.node_split_index));
-      last_node->children.clear();
-
-      last_node->children[child_val[0]] = child;
-    }
-  } else {
-    std::string node_key = last_node->get_key();
-    if (comp.node_split_index < node_key.length()) {
-      std::shared_ptr<Node> new_end = Node::create_leaf_node(
-          word.substr(comp.key_split_index, word.length()), word, doc_key);
-
-      std::shared_ptr<Node> new_child = last_node->migrate_children(
-          node_key.substr(comp.node_split_index, node_key.length()));
-      last_node->move_leaf_to(new_child);
-
-      last_node->children.clear();
-      last_node->delete_leaf();
-      last_node->set_key(node_key.substr(0, comp.node_split_index));
-      last_node->children[new_child->get_key()[0]] = new_child;
-      last_node->children[new_end->get_key()[0]] = new_end;
-    } else {
-      auto new_end = Node::create_leaf_node(
-          word.substr(comp.key_split_index, word.length()), word, doc_key);
-      last_node->children[new_end->get_key()[0]] = new_end;
-    }
-  }
-}
-
-void Trie::truncate(std::shared_ptr<Node> curr) {
-  auto child = curr->children.begin()->second;
-  curr->children.clear();
-  curr->set_key(curr->get_key() + child->get_key());
-  curr->children = child->children;
-  if (child->is_leaf()) {
-    child->move_leaf_to(curr);
-  }
-}
-
-bool Trie::erase(std::shared_ptr<Node> curr, std::string key, int begin,
-                 std::string doc_key) {
-  // check if we have a match
-  if (curr != nullptr && key.substr(begin, key.length()) == curr->get_key()) {
-    return curr->is_leaf();
-  }
-
-  // finding the next prefix in the trie
-  int new_begin = begin + curr->get_key().length();
-  // if its larger than the length of the key there is no point to move
-  // forward
-  if (new_begin > key.length())
-    return false;
-
-  // finding the next child
-  auto next_pair = curr->children.find(key[new_begin]);
-  if (next_pair == curr->children.end())
-    return false;
-
-  auto next = next_pair->second;
-  // if the next child is matching the word we want to remove
-  if (erase(next, key, new_begin, doc_key)) {
-    auto children = next->children;
-    // when there are children we do not want to erase the node completely but
-    // handle it with care
-    // 1. we remove the doc from the leaf.
-    // 2. we check if the doc is empty after the removal, and if so, we remove
-    // the leaf itslef.
-    // 3. if the node is no longer a leaf node, and have only one child, we
-    // truncate it with its next child
-    if (!children.empty()) {
-      next->get_leaf()->remove_doc(doc_key);
-      if (next->get_leaf()->empty()) {
-        next->delete_leaf();
-      }
-      if (next->children.size() == 1) {
-        truncate(next);
-      }
-    } else {
-      // in the case that the next node has no children we can remove it
-      // safely if its not a leaf
-      next->get_leaf()->remove_doc(doc_key);
-      if (next->get_leaf()->empty()) {
-        curr->children.erase(key[new_begin]);
-      }
-      // making sure that we are not truncating to the root
-      if (curr->children.size() == 1 && !curr->get_key().empty()) {
-        truncate(curr);
-      }
-    }
-  }
-  return false;
-}
-
-void Trie::remove(std::string key, std::string doc_key) {
-  erase(this->root, key, 0, doc_key);
-}
-
-void Trie::remove_document(std::string content, std::string doc_key) {
-  auto words = tokenize(content);
-  for (auto word : words) {
-    this->remove(word, doc_key);
-  }
-}
-
-int Trie::get_document_frequency_for_term(std::string term) {
-  int begin = 0;
-  auto node = search(root, term, begin);
-  return 0;
-}
+// int Trie::get_document_frequency_for_term(std::string term) {
+//   int begin = 0;
+//   auto node = search(root, term, begin);
+//   return 0;
+// }
 
 std::string print_leaf(std::shared_ptr<TermData> leaf) {
   std::string leaf_string = "";
@@ -251,9 +185,8 @@ std::string print_leaf(std::shared_ptr<TermData> leaf) {
   leaf_string += "]";
   return leaf_string;
 }
-void Trie::print(const std::shared_ptr<Node> node, const std::string prefix,
-                 int level) const {
-  if (node.get() == nullptr) {
+void Trie::print(const Node *node, const std::string prefix, int level) const {
+  if (node == nullptr) {
     std::cout << "EMPTY" << std::endl;
     return;
   }
@@ -286,20 +219,19 @@ std::string get_string_comp(Comperession comp) {
   return "key_split_index: " + to_string(comp.key_split_index) + "\n" +
          "node_split_index: " + to_string(comp.node_split_index) + "\n";
 }
-shared_ptr<Node> Trie::create_path(shared_ptr<Node> node, std::string key,
-                                   std::string doc_key) {
+Node *Trie::create_path(Node *node, std::string key, std::string doc_key) {
   size_t len = key.size();
-  shared_ptr<Node> selected_node = node;
-  shared_ptr<Node> found_node = nullptr;
+  Node *selected_node = node;
+  Node *found_node = nullptr;
   for (size_t pos = 0; selected_node != nullptr && pos < len;) {
     auto pair = selected_node->children.find(key[pos]);
 
     if (pair == selected_node->children.end()) {
-      auto new_child = make_shared<Node>(key.substr(pos, key.length()));
+      auto new_child = new Node(key.substr(pos, key.length()));
       selected_node->children.insert({key[pos], new_child});
       return new_child;
     } else {
-      shared_ptr<Node> node = pair->second;
+      Node *node = pair->second;
       Comperession cmp = node->compare(key, pos);
 
       // if the current node key is shorter
@@ -307,8 +239,7 @@ shared_ptr<Node> Trie::create_path(shared_ptr<Node> node, std::string key,
         selected_node = node;
       } else {
         std::string nkey = node->get_key();
-        auto intermediate =
-            make_shared<Node>(nkey.substr(0, cmp.node_split_index));
+        auto intermediate = new Node(nkey.substr(0, cmp.node_split_index));
         node->set_key(nkey.substr(cmp.node_split_index, nkey.length()));
         intermediate->children.insert({node->get_key()[0], node});
         selected_node->children.erase(nkey[0]);
@@ -331,3 +262,5 @@ void Trie::insert2(std::string key, std::string doc_key) {
     n->create_leaf(key, doc_key);
   }
 }
+
+Trie::~Trie() { delete this->root; }

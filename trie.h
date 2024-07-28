@@ -17,47 +17,47 @@ private:
   std::shared_ptr<TermData> leaf;
 
 public:
-  std::unordered_map<char, std::shared_ptr<Node>> children;
+  std::unordered_map<char, Node *> children;
 
   Node();
+  ~Node();
   Node(std::string key);
 
-  bool is_leaf();
-  std::string get_key();
+  bool is_leaf() const;
+  std::string get_key() const;
   void set_key(std::string new_key);
   void create_leaf(std::string data, std::string initial_doc_key);
-  std::shared_ptr<TermData> get_leaf();
-  void delete_leaf();
+  std::shared_ptr<TermData> get_leaf() const;
+  // void delete_leaf();
   void add_doc_or_increment(std::string doc_key);
-  void move_leaf_to(std::shared_ptr<Node> new_owner);
-  void merge_nodes(std::shared_ptr<Node> node_to_merge);
+  // void move_leaf_to(std::shared_ptr<Node> new_owner);
+  // void merge_nodes(std::shared_ptr<Node> node_to_merge);
   Comperession compare(std::string key, int begin);
-  std::shared_ptr<Node> migrate_children(std::string key);
-  static std::shared_ptr<Node> create_leaf_node(std::string key,
-                                                std::string data,
-                                                std::string initial_doc_key);
+  // std::shared_ptr<Node> migrate_children(std::string key);
+  // static std::shared_ptr<Node> create_leaf_node(std::string key,
+  //                                               std::string data,
+  //                                               std::string initial_doc_key);
 };
 
 class Trie {
 private:
-  std::shared_ptr<Node> root;
+  Node *root;
 
 public:
   Trie();
-  std::shared_ptr<Node> search(std::shared_ptr<Node> node, std::string key,
-                               int &begin);
-  std::shared_ptr<Node> find_exact_match(std::string key);
-  void insert(std::string word, std::string doc_key);
-  bool erase(std::shared_ptr<Node> curr, std::string key, int begin,
-             std::string doc_key);
-  void truncate(std::shared_ptr<Node> curr);
-  void remove(std::string key, std::string doc_key);
-  void remove_document(std::string content, std::string doc_key);
-  int get_document_frequency_for_term(std::string term);
-  void print(const std::shared_ptr<Node> node, const std::string prefix,
-             int level) const;
-  shared_ptr<Node> create_path(shared_ptr<Node> node, std::string key,
-                               std::string doc_key);
+  ~Trie();
+  // std::shared_ptr<Node> search(std::shared_ptr<Node> node, std::string key,
+  //                              int &begin);
+  // std::shared_ptr<Node> find_exact_match(std::string key);
+  // void insert(std::string word, std::string doc_key);
+  // bool erase(std::shared_ptr<Node> curr, std::string key, int begin,
+  //            std::string doc_key);
+  // void truncate(std::shared_ptr<Node> curr);
+  // void remove(std::string key, std::string doc_key);
+  // void remove_document(std::string content, std::string doc_key);
+  // int get_document_frequency_for_term(std::string term);
+  void print(const Node *node, const std::string prefix, int level) const;
+  Node *create_path(Node *node, std::string key, std::string doc_key);
   void insert2(std::string word, std::string doc_key);
   void print_tree() const;
 };
