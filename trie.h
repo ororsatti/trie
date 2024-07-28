@@ -14,7 +14,7 @@ class Node {
 
 private:
   std::string key;
-  std::shared_ptr<TermData> leaf;
+  TermData *leaf;
 
 public:
   std::unordered_map<char, Node *> children;
@@ -27,8 +27,8 @@ public:
   std::string get_key() const;
   void set_key(std::string new_key);
   void create_leaf(std::string data, std::string initial_doc_key);
-  std::shared_ptr<TermData> get_leaf() const;
-  // void delete_leaf();
+  TermData &get_leaf() const;
+  void delete_leaf();
   void add_doc_or_increment(std::string doc_key);
   // void move_leaf_to(std::shared_ptr<Node> new_owner);
   // void merge_nodes(std::shared_ptr<Node> node_to_merge);

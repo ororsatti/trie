@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+TermData::~TermData() {}
 std::string TermData::get_data() { return this->term; }
 
 size_t TermData::get_term_count(std::string doc_id) {

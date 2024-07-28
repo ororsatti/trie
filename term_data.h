@@ -14,6 +14,7 @@ private:
   std::unordered_map<std::string, size_t> docs_term_count;
 
 public:
+  ~TermData();
   TermData(std::string term, std::string initial_doc_key);
   std::string get_data();
   size_t get_term_count(std::string doc_id);

@@ -1,4 +1,5 @@
 #include "trie.h"
+#include "term_data.h"
 #include "tokenizer.h"
 #include <cstddef>
 #include <iostream>
@@ -17,12 +18,14 @@ Node::~Node() {
   }
 
   this->children.clear();
-  // delete this;
+  if (this->is_leaf()) {
+    this->delete_leaf();
+  }
 }
 
-bool Node::is_leaf() const { return this->leaf.get() != nullptr; }
+bool Node::is_leaf() const { return this->leaf != nullptr; }
 
-std::shared_ptr<TermData> Node::get_leaf() const { return this->leaf; }
+TermData &Node::get_leaf() const { return *this->leaf; }
 
 void Node::add_doc_or_increment(std::string doc_key) {
   if (this->leaf->is_doc_exits(doc_key)) {
@@ -35,13 +38,16 @@ void Node::add_doc_or_increment(std::string doc_key) {
 std::string Node::get_key() const { return this->key; }
 
 void Node::set_key(std::string new_key) { this->key = new_key; }
-// void Node::delete_leaf() { this->leaf.reset(); }
+void Node::delete_leaf() {
+  delete this->leaf;
+  this->leaf = nullptr;
+}
 
 void Node::create_leaf(std::string data, std::string initial_doc_key) {
-  if (this->leaf.get()) {
+  if (this->leaf != nullptr) {
     return;
   }
-  this->leaf = std::make_unique<TermData>(data, initial_doc_key);
+  this->leaf = new TermData(data, initial_doc_key);
 }
 
 Comperession Node::compare(std::string key, int begin) {
@@ -169,17 +175,17 @@ Trie::Trie() { this->root = new Node(); }
 //   return 0;
 // }
 
-std::string print_leaf(std::shared_ptr<TermData> leaf) {
+std::string print_leaf(TermData &leaf) {
   std::string leaf_string = "";
 
-  std::vector<std::string> keys = leaf->get_all_doc_keys();
+  std::vector<std::string> keys = leaf.get_all_doc_keys();
   leaf_string += "( ";
-  leaf_string += leaf->get_data();
+  leaf_string += leaf.get_data();
   leaf_string += " ): [ ";
   for (std::string key : keys) {
     leaf_string += key;
     leaf_string += ":";
-    leaf_string += std::to_string(leaf->get_term_count(key));
+    leaf_string += std::to_string(leaf.get_term_count(key));
     leaf_string += " ";
   }
   leaf_string += "]";
