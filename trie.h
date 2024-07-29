@@ -14,7 +14,7 @@ class Node {
 
 private:
   std::string key;
-  TermData *leaf;
+  TermData leaf;
 
 public:
   std::unordered_map<char, Node *> children;
@@ -27,10 +27,11 @@ public:
   std::string get_key() const;
   void set_key(std::string new_key);
   void create_leaf(std::string data, std::string initial_doc_key);
+  TermData &get_leaf();
   TermData &get_leaf() const;
   void delete_leaf();
   void add_doc_or_increment(std::string doc_key);
-  // void move_leaf_to(std::shared_ptr<Node> new_owner);
+  bool move_leaf_to(Node *new_owner);
   // void merge_nodes(std::shared_ptr<Node> node_to_merge);
   Comperession compare(std::string key, int begin);
   // std::shared_ptr<Node> migrate_children(std::string key);
@@ -50,10 +51,9 @@ public:
   //                              int &begin);
   // std::shared_ptr<Node> find_exact_match(std::string key);
   // void insert(std::string word, std::string doc_key);
-  // bool erase(std::shared_ptr<Node> curr, std::string key, int begin,
-  //            std::string doc_key);
-  // void truncate(std::shared_ptr<Node> curr);
-  // void remove(std::string key, std::string doc_key);
+  bool erase(Node *curr, std::string key, int begin, std::string doc_key);
+  void truncate(Node *curr);
+  void remove(std::string key, std::string doc_key);
   // void remove_document(std::string content, std::string doc_key);
   // int get_document_frequency_for_term(std::string term);
   void print(const Node *node, const std::string prefix, int level) const;

@@ -1,15 +1,16 @@
 #include "trie.h"
 #include "term_data.h"
-#include "tokenizer.h"
 #include <cstddef>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-Node::Node(std::string key) { this->key = key; }
+Node::Node(std::string key) {
+  this->key = key;
+  this->leaf = TermData();
+}
 
 Node::Node() {}
 Node::~Node() {
@@ -18,36 +19,38 @@ Node::~Node() {
   }
 
   this->children.clear();
-  if (this->is_leaf()) {
-    this->delete_leaf();
-  }
 }
 
-bool Node::is_leaf() const { return this->leaf != nullptr; }
+bool Node::is_leaf() const { return !this->leaf.empty(); }
+bool Node::move_leaf_to(Node *new_owner) {
+  if (new_owner->is_leaf()) {
+    return false;
+  }
 
-TermData &Node::get_leaf() const { return *this->leaf; }
+  new_owner->leaf = std::move(this->leaf);
+  return true;
+}
+TermData &Node::get_leaf() { return this->leaf; }
+TermData &Node::get_leaf() const { return const_cast<TermData &>(this->leaf); }
 
 void Node::add_doc_or_increment(std::string doc_key) {
-  if (this->leaf->is_doc_exits(doc_key)) {
-    this->leaf->inc_term_count(doc_key);
+  if (this->leaf.is_doc_exits(doc_key)) {
+    this->leaf.inc_term_count(doc_key);
   } else {
-    this->leaf->add_doc(doc_key, 1);
+    this->leaf.add_doc(doc_key, 1);
   }
 }
 
 std::string Node::get_key() const { return this->key; }
 
 void Node::set_key(std::string new_key) { this->key = new_key; }
-void Node::delete_leaf() {
-  delete this->leaf;
-  this->leaf = nullptr;
-}
+void Node::delete_leaf() { this->leaf.empty(); }
 
 void Node::create_leaf(std::string data, std::string initial_doc_key) {
-  if (this->leaf != nullptr) {
+  if (!this->leaf.empty()) {
     return;
   }
-  this->leaf = new TermData(data, initial_doc_key);
+  this->leaf = TermData(std::move(data), initial_doc_key);
 }
 
 Comperession Node::compare(std::string key, int begin) {
@@ -91,76 +94,87 @@ Trie::Trie() { this->root = new Node(); }
 //   return node;
 // }
 
-// void Trie::truncate(std::shared_ptr<Node> curr) {
-//   auto child = curr->children.begin()->second;
-//   curr->children.clear();
-//   curr->set_key(curr->get_key() + child->get_key());
-//   curr->children = child->children;
-//   if (child->is_leaf()) {
-//     child->move_leaf_to(curr);
-//   }
-// }
-//
-// bool Trie::erase(std::shared_ptr<Node> curr, std::string key, int begin,
-//                  std::string doc_key) {
-//   // check if we have a match
-//   if (curr != nullptr && key.substr(begin, key.length()) == curr->get_key())
-//   {
-//     return curr->is_leaf();
-//   }
-//
-//   // finding the next prefix in the trie
-//   int new_begin = begin + curr->get_key().length();
-//   // if its larger than the length of the key there is no point to move
-//   // forward
-//   if (new_begin > key.length())
-//     return false;
-//
-//   // finding the next child
-//   auto next_pair = curr->children.find(key[new_begin]);
-//   if (next_pair == curr->children.end())
-//     return false;
-//
-//   auto next = next_pair->second;
-//   // if the next child is matching the word we want to remove
-//   if (erase(next, key, new_begin, doc_key)) {
-//     auto children = next->children;
-//     // when there are children we do not want to erase the node completely
-//     but
-//     // handle it with care
-//     // 1. we remove the doc from the leaf.
-//     // 2. we check if the doc is empty after the removal, and if so, we
-//     remove
-//     // the leaf itslef.
-//     // 3. if the node is no longer a leaf node, and have only one child, we
-//     // truncate it with its next child
-//     if (!children.empty()) {
-//       next->get_leaf()->remove_doc(doc_key);
-//       if (next->get_leaf()->empty()) {
-//         next->delete_leaf();
-//       }
-//       if (next->children.size() == 1) {
-//         truncate(next);
-//       }
-//     } else {
-//       // in the case that the next node has no children we can remove it
-//       // safely if its not a leaf
-//       next->get_leaf()->remove_doc(doc_key);
-//       if (next->get_leaf()->empty()) {
-//         curr->children.erase(key[new_begin]);
-//       }
-//       // making sure that we are not truncating to the root
-//       if (curr->children.size() == 1 && !curr->get_key().empty()) {
-//         truncate(curr);
-//       }
-//     }
-//   }
-//   return false;
-// }
+void Trie::truncate(Node *curr) {
 
-// void Trie::remove(std::string key, std::string doc_key) {
-//   erase(this->root, key, 0, doc_key);
-// }
+  if (curr->children.size() > 1) {
+    std::cout << "Can not truncate node with multiple children" << "\n";
+    return;
+  }
+  // getting the only child
+  Node *child = curr->children.begin()->second;
+  curr->children.clear();
+  // merge keys
+  curr->set_key(curr->get_key() + child->get_key());
+  // use the children's children
+  curr->children = child->children;
+
+  // if child is a leaf, own the leaf
+  if (child->is_leaf()) {
+    // if we fail to move leaf, exit the function early
+    if (!child->move_leaf_to(curr))
+      return;
+  }
+
+  // clearing child refrences so we won't delete them.
+  child->children.clear();
+  delete child;
+}
+
+bool Trie::erase(Node *curr, std::string key, int begin, std::string doc_key) {
+  // check if we have a match
+  if (curr != nullptr && key.substr(begin, key.length()) == curr->get_key()) {
+    return curr->is_leaf();
+  }
+
+  // finding the next prefix in the trie
+  int new_begin = begin + curr->get_key().length();
+  // if its larger than the length of the key there is no point to move
+  // forward
+  if (new_begin > key.length())
+    return false;
+
+  // finding the next child
+  auto next_pair = curr->children.find(key[new_begin]);
+  if (next_pair == curr->children.end())
+    return false;
+
+  auto next = next_pair->second;
+  // if the next child is matching the word we want to remove
+  if (erase(next, key, new_begin, doc_key)) {
+    auto children = next->children;
+    // when there are children we do not want to erase the node completely
+    // but
+    // handle it with care
+    // 1. we remove the doc from the leaf.
+    // 2. we check if the doc is empty after the removal, and if so, we
+    // remove the leaf itslef.
+    // 3. if the node is no longer a leaf node, and have only one child, we
+    // truncate it with its next child
+    TermData &leaf = next->get_leaf();
+    if (!children.empty()) {
+      leaf.remove_doc(doc_key);
+      if (leaf.empty() && next->children.size() == 1) {
+        truncate(next);
+      }
+    } else {
+      // in the case that the next node has no children we can remove it
+      // safely if its not a leaf
+      leaf.remove_doc(doc_key);
+      if (leaf.empty()) {
+        curr->children.erase(key[new_begin]);
+      }
+      // making sure that we are not truncating to the root
+      if (curr->children.size() == 1 && !curr->get_key().empty()) {
+        truncate(curr);
+      }
+    }
+  }
+  return false;
+}
+
+void Trie::remove(std::string key, std::string doc_key) {
+  this->erase(this->root, key, 0, doc_key);
+}
 
 // void Trie::remove_document(std::string content, std::string doc_key) {
 //   auto words = tokenize(content);
@@ -262,7 +276,6 @@ Node *Trie::create_path(Node *node, std::string key, std::string doc_key) {
 void Trie::insert2(std::string key, std::string doc_key) {
   auto n = this->create_path(this->root, key, doc_key);
   if (n->is_leaf()) {
-    // std::cout << "dockey: " << doc_key << std::endl;
     n->add_doc_or_increment(doc_key);
   } else {
     n->create_leaf(key, doc_key);

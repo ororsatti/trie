@@ -1,9 +1,21 @@
 #include "term_data.h"
+#include <algorithm>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 TermData::~TermData() {}
+TermData::TermData() {
+  this->term = "";
+  this->docs_term_count = {};
+}
+TermData::TermData(TermData &&src) {
+  this->term = std::move(src.term);
+  this->docs_term_count = std::move(src.docs_term_count);
+  src.term = "";
+  src.docs_term_count = {};
+}
 std::string TermData::get_data() { return this->term; }
 
 size_t TermData::get_term_count(std::string doc_id) {
@@ -25,9 +37,16 @@ void TermData::inc_term_count(std::string doc_id) {
   }
 }
 
-TermData::TermData(std::string term, std::string initial_doc_key) {
+TermData &TermData::operator=(TermData &&other) {
+  this->docs_term_count = std::move(other.docs_term_count);
+  this->term = std::move(other.term);
+  other.term = "";
+  other.docs_term_count = {};
+  return *this;
+}
+TermData::TermData(std::string &&term, std::string initial_doc_key) {
   this->term = term;
-  this->docs_term_count[initial_doc_key] = 1;
+  this->docs_term_count.insert({initial_doc_key, 1});
 }
 
 std::vector<std::string> TermData::get_all_doc_keys() {
@@ -42,4 +61,7 @@ bool TermData::is_doc_exits(std::string doc_key) {
   return this->docs_term_count.find(doc_key) != this->docs_term_count.end();
 }
 
-bool TermData::empty() { return this->docs_term_count.empty(); }
+bool TermData::empty() const {
+  // std::cout << this->docs_term_count.empty() << "\n";
+  return this->docs_term_count.empty();
+}

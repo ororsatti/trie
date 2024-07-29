@@ -15,7 +15,10 @@ private:
 
 public:
   ~TermData();
-  TermData(std::string term, std::string initial_doc_key);
+  TermData();
+  TermData(TermData &&src);
+  TermData(std::string &&term, std::string initial_doc_key);
+  TermData &operator=(TermData &&other);
   std::string get_data();
   size_t get_term_count(std::string doc_id);
   void add_doc(std::string doc_id, size_t term_count);
@@ -23,7 +26,7 @@ public:
   void inc_term_count(std::string doc_id);
   bool remove_doc(std::string doc_id);
   bool is_doc_exits(std::string doc_key);
-  bool empty();
+  bool empty() const;
 };
 
 #endif
