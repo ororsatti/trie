@@ -1,6 +1,4 @@
 #include "term_data.h"
-#include <algorithm>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,9 +30,7 @@ bool TermData::remove_doc(std::string doc_id) {
 }
 
 void TermData::inc_term_count(std::string doc_id) {
-  if (this->docs_term_count.find(doc_id) != this->docs_term_count.end()) {
-    this->docs_term_count[doc_id]++;
-  }
+  this->docs_term_count[doc_id]++;
 }
 
 TermData &TermData::operator=(TermData &&other) {
@@ -57,7 +53,7 @@ std::vector<std::string> TermData::get_all_doc_keys() {
   return doc_keys;
 }
 
-bool TermData::is_doc_exits(std::string doc_key) {
+bool TermData::is_doc_exists(std::string doc_key) {
   return this->docs_term_count.find(doc_key) != this->docs_term_count.end();
 }
 

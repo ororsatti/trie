@@ -34,7 +34,7 @@ TermData &Node::get_leaf() { return this->leaf; }
 TermData &Node::get_leaf() const { return const_cast<TermData &>(this->leaf); }
 
 void Node::add_doc_or_increment(std::string doc_key) {
-  if (this->leaf.is_doc_exits(doc_key)) {
+  if (this->leaf.is_doc_exists(doc_key)) {
     this->leaf.inc_term_count(doc_key);
   } else {
     this->leaf.add_doc(doc_key, 1);

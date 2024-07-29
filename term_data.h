@@ -25,7 +25,7 @@ public:
   std::vector<std::string> get_all_doc_keys();
   void inc_term_count(std::string doc_id);
   bool remove_doc(std::string doc_id);
-  bool is_doc_exits(std::string doc_key);
+  bool is_doc_exists(std::string doc_key);
   bool empty() const;
 };
 
