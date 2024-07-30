@@ -4,6 +4,8 @@
 #include <vector>
 
 TermData::~TermData() {}
+TermData::TermData(const TermData &other)
+    : term(other.term), docs_term_count(other.docs_term_count) {}
 TermData::TermData() {
   this->term = "";
   this->docs_term_count = {};
@@ -57,7 +59,4 @@ bool TermData::is_doc_exists(std::string doc_key) {
   return this->docs_term_count.find(doc_key) != this->docs_term_count.end();
 }
 
-bool TermData::empty() const {
-  // std::cout << this->docs_term_count.empty() << "\n";
-  return this->docs_term_count.empty();
-}
+bool TermData::empty() const { return this->docs_term_count.empty(); }

@@ -1,5 +1,6 @@
 #include "trie.h"
 #include "term_data.h"
+#include "tokenizer.h"
 #include <cstddef>
 #include <iostream>
 #include <string>
@@ -13,6 +14,14 @@ Node::Node(std::string key) {
 }
 
 Node::Node() {}
+Node::Node(const Node &other) : key(other.key), leaf(other.leaf) {
+
+  for (const auto pair : other.children) {
+    Node *copy_node = new Node(*pair.second);
+    this->children[pair.first] = copy_node;
+  }
+}
+
 Node::~Node() {
   for (auto pair : this->children) {
     delete pair.second;
@@ -53,7 +62,7 @@ void Node::create_leaf(std::string data, std::string initial_doc_key) {
   this->leaf = TermData(std::move(data), initial_doc_key);
 }
 
-Comperession Node::compare(std::string key, int begin) {
+Comperession Node::compare(std::string key, int begin) const {
   Comperession c = {
       .node_split_index = 0,
       .key_split_index = begin,
@@ -71,28 +80,26 @@ Comperession Node::compare(std::string key, int begin) {
 
 Trie::Trie() { this->root = new Node(); }
 
-// std::shared_ptr<Node> Trie::search(std::shared_ptr<Node> node, std::string
-// key,
-//                                    int &begin) {
-//   Comperession comp = node->compare(key, begin);
-//
-//   // word is a prefix of node.value, or they are equal
-//   if (comp.node_split_index >= key.length()) {
-//     return node;
-//   }
-//
-//   // node.value is a prefix of word
-//   if (comp.node_split_index >= node->get_key().length()) {
-//     auto next = node->children.find(key[comp.key_split_index]);
-//     if (next == node->children.end()) {
-//       return node;
-//     }
-//     begin = comp.key_split_index;
-//     return Trie::search(next->second, key, begin);
-//   }
-//
-//   return node;
-// }
+const Node *Trie::search(Node *node, std::string key, int &begin) {
+  Comperession comp = node->compare(key, begin);
+
+  // word is a prefix of node.value, or they are equal
+  if (comp.node_split_index >= key.length()) {
+    return node;
+  }
+
+  // node.value is a prefix of word
+  if (comp.node_split_index >= node->get_key().length()) {
+    auto next = node->children.find(key[comp.key_split_index]);
+    if (next == node->children.end()) {
+      return node;
+    }
+    begin = comp.key_split_index;
+    return this->search(next->second, key, begin);
+  }
+
+  return node;
+}
 
 void Trie::truncate(Node *curr) {
 
@@ -172,21 +179,31 @@ bool Trie::erase(Node *curr, std::string key, int begin, std::string doc_key) {
   return false;
 }
 
+const Node *Trie::find_exact_match(std::string key) {
+  int begin = 0;
+  const Node *n = this->search(this->root, key, begin);
+  if (!n->is_leaf())
+    return nullptr;
+  if (key[begin] == n->get_key()[0])
+    return n;
+  return nullptr;
+}
+
 void Trie::remove(std::string key, std::string doc_key) {
   this->erase(this->root, key, 0, doc_key);
 }
 
-// void Trie::remove_document(std::string content, std::string doc_key) {
-//   auto words = tokenize(content);
-//   for (auto word : words) {
-//     this->remove(word, doc_key);
-//   }
-// }
+void Trie::remove_document(std::string content, std::string doc_key) {
+  auto words = tokenize(content);
+  for (auto word : words) {
+    this->remove(word, doc_key);
+  }
+}
 
 // int Trie::get_document_frequency_for_term(std::string term) {
 //   int begin = 0;
 //   auto node = search(root, term, begin);
-//   return 0;
+//   // return node.get_leaf().
 // }
 
 std::string print_leaf(TermData &leaf) {
@@ -273,7 +290,7 @@ Node *Trie::create_path(Node *node, std::string key, std::string doc_key) {
   return selected_node;
 }
 
-void Trie::insert2(std::string key, std::string doc_key) {
+void Trie::insert(std::string key, std::string doc_key) {
   auto n = this->create_path(this->root, key, doc_key);
   if (n->is_leaf()) {
     n->add_doc_or_increment(doc_key);

@@ -10,6 +10,7 @@
 typedef struct {
   std::string key;
   size_t words_count;
+
 } Document;
 
 typedef struct {
@@ -19,7 +20,7 @@ typedef struct {
 
 class Corpus {
 private:
-  std::unordered_map<std::string, std::shared_ptr<Document>> docs;
+  std::unordered_map<std::string, Document *> docs;
   Trie index;
   std::string gen_doc_short_key(std::string doc_key);
   vector<QueryResult> bm25(vector<std::string> query);
@@ -33,7 +34,7 @@ public:
   bool add_doc(std::string doc_key, std::string doc_content);
   void remove_doc(std::string doc_key, std::string doc_content);
   vector<QueryResult> search(std::string query);
-  shared_ptr<Node> find_node(std::string word);
+  const Node *find_node(std::string word);
   size_t get_doc_word_count(std::string doc_key);
   double get_avg_doc_len();
   void print();

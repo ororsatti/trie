@@ -1,6 +1,7 @@
 #ifndef SEARCH_TOKENIZER
 #define SEARCH_TOKENIZER
 #include <iostream>
+#include <set>
 #include <vector>
 using namespace std;
 

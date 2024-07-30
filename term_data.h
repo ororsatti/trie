@@ -17,6 +17,7 @@ public:
   ~TermData();
   TermData();
   TermData(TermData &&src);
+  TermData(const TermData &other);
   TermData(std::string &&term, std::string initial_doc_key);
   TermData &operator=(TermData &&other);
   std::string get_data();

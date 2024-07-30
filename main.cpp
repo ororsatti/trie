@@ -2,6 +2,8 @@
 #include "tokenizer.h"
 #include "trie.h"
 #include <fstream>
+#include <iostream>
+#include <set>
 #include <vector>
 
 // Function to read a file into a string
@@ -48,47 +50,60 @@ parseJsonContent(const std::string &jsonContent) {
 }
 
 void test_content_list() {
-  Trie *t = new Trie();
+  Corpus c;
   auto x = parseJsonContent(read_file("test.json"));
   auto start = std::chrono::high_resolution_clock::now();
   for (const auto &pair : x) {
-    vector<string> words = tokenize(pair.second);
-    for (const auto &word : words) {
-      t->insert2(word, pair.first);
-    }
+    c.add_doc(pair.first, pair.second);
   }
+
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end - start;
   std::cout << "Time taken by function: " << duration.count() << " seconds"
             << std::endl;
-
-  delete t;
+  vector<QueryResult> res = c.search("London is so beautiful this year");
+  // std::cout << res.size() << "\n";
+  for (const auto el : res) {
+    std::cout << el.doc_key << " " << el.score << "\n";
+  }
 }
 
 int main(void) {
   Trie *t;
-
+  Corpus c;
   t = new Trie();
   std::string doc1 = "doc1";
   std::string doc2 = "doc2";
+  std::string doc1content = "this is my content";
+  std::string doc2content = "this is a test content for doc 2";
 
-  std::string word1 = "t";
-  std::string word2 = "te";
-  std::string word3 = "tes";
-  std::string word4 = "test";
-
-  t->insert2(word1, doc1);
-  t->insert2(word2, doc1);
-  t->insert2(word3, doc2);
-  t->insert2(word4, doc2);
-  t->insert2(word1, doc2);
-  t->insert2(word2, doc2);
-
-  // test_content_list();
+  c.add_doc(doc1, doc1content);
+  c.add_doc(doc2, doc2content);
+  // vector<QueryResult> res = c.search("this my");
+  // for (const auto el : res) {
+  //   std::cout << el.doc_key << " " << el.score << "\n";
+  // }
+  // c.remove_doc(doc2, doc2content);
+  // std::string content =
+  //     "this! is a test this is so, fast,100st and awesome, cool. ";
+  // auto x = tokenize_regex(content);
+  // for (const std::string word : x) {
+  //   std::cout << word << "\n";
+  // }
+  test_content_list();
+  // c.print();
+  // const Node *x = c.find_node("this");
+  // //
+  // if (x == nullptr) {
+  //   std::cout << "didnt find " << "this" << "\n";
+  //   delete t;
+  //   return 0;
+  // }
+  // std::cout << x->get_key() << "\n";
   // t->print_tree();
   // t->remove(word1, "doc1");
   // t->remove(word1, "doc2");
   // t->print_tree();
-  delete t;
+  // delete t;
   return 0;
 }
